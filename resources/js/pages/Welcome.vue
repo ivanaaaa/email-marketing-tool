@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login } from '@/routes';
+// Remove the register import since it's disabled
 import { Head, Link } from '@inertiajs/vue3';
 </script>
 
@@ -29,12 +30,7 @@ import { Head, Link } from '@inertiajs/vue3';
                     >
                         Log in
                     </Link>
-                    <Link
-                        :href="register()"
-                        class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                    >
-                        Register
-                    </Link>
+                    <!-- Removed the Register link since registration is disabled -->
                 </template>
             </nav>
         </header>
