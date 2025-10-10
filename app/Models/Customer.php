@@ -41,4 +41,35 @@ class Customer extends Model
         return $this->belongsToMany(Group::class, 'customer_group')
             ->withTimestamps();
     }
+
+    /**
+     * Get the customer's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Get customer data for email placeholder replacement.
+     */
+    public function getPlaceholderData(): array
+    {
+        return [
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'full_name' => $this->full_name,
+            'email' => $this->email,
+            'sex' => $this->sex ?? '',
+            'birth_date' => $this->birth_date?->format('Y-m-d') ?? '',
+        ];
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     */
+    public function routeNotificationForMail(): string
+    {
+        return $this->email;
+    }
 }
