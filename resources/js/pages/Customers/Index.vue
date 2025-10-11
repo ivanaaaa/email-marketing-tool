@@ -13,6 +13,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Search, UserPlus } from 'lucide-vue-next';
 
 interface Customer {
     id: number;
@@ -56,6 +57,11 @@ const handleSearch = () => {
     );
 };
 
+const clearSearch = () => {
+    searchQuery.value = '';
+    router.get('/customers', {}, { preserveState: true });
+};
+
 const deleteCustomer = (id: number) => {
     if (confirm('Are you sure you want to delete this customer?')) {
         router.delete(`/customers/${id}`);
@@ -69,18 +75,27 @@ const deleteCustomer = (id: number) => {
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Customers</h1>
                 <Link href="/customers/create">
-                    <Button>Add Customer</Button>
+                    <Button>
+                        <UserPlus class="mr-2 h-4 w-4" />
+                        Add Customer
+                    </Button>
                 </Link>
             </div>
 
             <div class="mb-4 flex gap-2">
-                <Input
-                    v-model="searchQuery"
-                    placeholder="Search customers..."
-                    class="max-w-sm"
-                    @keyup.enter="handleSearch"
-                />
+                <div class="relative flex-1 max-w-sm">
+                    <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                        v-model="searchQuery"
+                        placeholder="Search customers..."
+                        class="pl-10"
+                        @keyup.enter="handleSearch"
+                    />
+                </div>
                 <Button @click="handleSearch">Search</Button>
+                <Button v-if="props.search" variant="outline" @click="clearSearch">
+                    Clear
+                </Button>
             </div>
 
             <div class="bg-white rounded-lg shadow">
@@ -97,8 +112,27 @@ const deleteCustomer = (id: number) => {
                     </TableHeader>
                     <TableBody>
                         <TableRow v-if="customers.data.length === 0">
-                            <TableCell colspan="6" class="text-center text-gray-500 py-8">
-                                No customers found.
+                            <TableCell colspan="6" class="text-center py-12">
+                                <div class="flex flex-col items-center space-y-3">
+                                    <UserPlus class="h-12 w-12 text-gray-300" />
+                                    <div class="text-gray-500">
+                                        <p class="font-medium" v-if="props.search">
+                                            No customers found for "{{ props.search }}"
+                                        </p>
+                                        <p class="font-medium" v-else>
+                                            No customers yet
+                                        </p>
+                                        <p class="text-sm text-gray-400 mt-1" v-if="!props.search">
+                                            Get started by adding your first customer
+                                        </p>
+                                    </div>
+                                    <Link href="/customers/create" v-if="!props.search">
+                                        <Button>
+                                            <UserPlus class="mr-2 h-4 w-4" />
+                                            Add First Customer
+                                        </Button>
+                                    </Link>
+                                </div>
                             </TableCell>
                         </TableRow>
                         <TableRow v-for="customer in customers.data" :key="customer.id">
@@ -140,10 +174,13 @@ const deleteCustomer = (id: number) => {
             </div>
 
             <!-- Pagination -->
-            <div class="mt-4 flex justify-between items-center">
+            <div class="mt-4 flex justify-between items-center" v-if="customers.data.length > 0">
                 <div class="text-sm text-gray-600">
                     Showing {{ customers.from || 0 }} to {{ customers.to || 0 }} of
                     {{ customers.total }} customers
+                    <span v-if="props.search" class="font-medium">
+                        for "{{ props.search }}"
+                    </span>
                 </div>
                 <div class="flex gap-1" v-if="customers.last_page > 1">
                     <Link

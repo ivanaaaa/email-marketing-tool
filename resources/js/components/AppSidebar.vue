@@ -12,6 +12,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { customers } from '@/routes';
+import { groups } from '@/routes';
+import { campaigns } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Folder, LayoutGrid } from 'lucide-vue-next';
@@ -21,6 +23,16 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Customers',
         href: customers(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Groups',
+        href: groups(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Campaigns',
+        href: campaigns(),
         icon: LayoutGrid,
     },
 ];

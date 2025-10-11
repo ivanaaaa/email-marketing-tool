@@ -25,10 +25,10 @@ Route::middleware(['auth'])->group(function () {
 
 
     // Customers
-    Route::resource('customers', CustomerController::class);
+    Route::resource('customers', CustomerController::class)->name('index', 'customers');
 
     // Groups
-    Route::resource('groups', GroupController::class);
+    Route::resource('groups', GroupController::class)->name('index', 'groups');
 
     // Email Templates
     Route::resource('email-templates', EmailTemplateController::class);
@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('email-templates.preview');
 
     // Campaigns
-    Route::resource('campaigns', CampaignController::class);
+    Route::resource('campaigns', CampaignController::class)->name('index', 'campaigns');
     Route::post('campaigns/{campaign}/schedule', [CampaignController::class, 'schedule'])
         ->name('campaigns.schedule');
     Route::post('campaigns/{campaign}/send-now', [CampaignController::class, 'sendNow'])

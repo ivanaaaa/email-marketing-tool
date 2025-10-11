@@ -27,4 +27,18 @@ class UpdateEmailTemplateRequest extends FormRequest
             'body' => 'required|string',
         ];
     }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'The template name is required.',
+            'subject.required' => 'The email subject is required.',
+            'body.required' => 'The email body is required.',
+        ];
+    }
 }
