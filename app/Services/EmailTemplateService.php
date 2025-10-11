@@ -23,11 +23,13 @@ class EmailTemplateService
      */
     public function create(User $user, array $data): EmailTemplate
     {
-        return $user->emailTemplates()->create([
-            'name' => $data['name'],
-            'subject' => $data['subject'],
-            'body' => $data['body'],
-        ]);
+        return DB::transaction(function () use ($user, $data) {
+            return $user->emailTemplates()->create([
+                'name' => $data['name'],
+                'subject' => $data['subject'],
+                'body' => $data['body'],
+            ]);
+        });
     }
 
     /**
@@ -35,13 +37,15 @@ class EmailTemplateService
      */
     public function update(EmailTemplate $template, array $data): EmailTemplate
     {
-        $template->update([
-            'name' => $data['name'],
-            'subject' => $data['subject'],
-            'body' => $data['body'],
-        ]);
+        return DB::transaction(function () use ($template, $data) {
+            $template->update([
+                'name' => $data['name'],
+                'subject' => $data['subject'],
+                'body' => $data['body'],
+            ]);
 
-        return $template;
+            return $template;
+        });
     }
 
     /**
@@ -49,12 +53,13 @@ class EmailTemplateService
      */
     public function delete(EmailTemplate $template): bool
     {
-        // Check if template is used in any campaigns
-        if ($template->campaigns()->exists()) {
-            throw new \Exception('Cannot delete template that is used in campaigns.');
-        }
+        return DB::transaction(function () use ($template) {
+            if ($template->campaigns()->exists()) {
+                throw new \Exception('Cannot delete template that is used in campaigns.');
+            }
 
-        return $template->delete();
+            return $template->delete();
+        });
     }
 
     /**

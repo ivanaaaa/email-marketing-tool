@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEmailTemplateRequest;
+use App\Http\Requests\UpdateEmailTemplateRequest;
 use App\Models\EmailTemplate;
 use App\Services\EmailTemplateService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -11,7 +12,6 @@ use Inertia\Inertia;
 
 class EmailTemplateController extends Controller
 {
-
     use AuthorizesRequests;
 
     /**
@@ -49,22 +49,33 @@ class EmailTemplateController extends Controller
      */
     public function store(StoreEmailTemplateRequest $request)
     {
-        $template = $this->emailTemplateService->create(
-            $request->user(),
-            $request->validated()
-        );
+        try {
+            $template = $this->emailTemplateService->create(
+                $request->user(),
+                $request->validated()
+            );
 
-        return redirect()
-            ->route('email-templates.index')
-            ->with('success', 'Email template created successfully.');
+            return redirect()
+                ->route('email-templates.index')
+                ->with('success', 'Email template created successfully.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('email-templates.index')
+                ->with('error', 'Failed to create email template: ' . $e->getMessage());
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(EmailTemplate $emailTemplate)
     {
-        //
+        $this->authorize('view', $emailTemplate);
+
+        return Inertia::render('EmailTemplates/Show', [
+            'template' => $emailTemplate,
+            'placeholders' => EmailTemplate::getAvailablePlaceholders(),
+        ]);
     }
 
     /**
@@ -83,18 +94,24 @@ class EmailTemplateController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, EmailTemplate $emailTemplate)
+    public function update(UpdateEmailTemplateRequest $request, EmailTemplate $emailTemplate)
     {
         $this->authorize('update', $emailTemplate);
 
-        $this->emailTemplateService->update(
-            $emailTemplate,
-            $request->validated()
-        );
+        try {
+            $this->emailTemplateService->update(
+                $emailTemplate,
+                $request->validated()
+            );
 
-        return redirect()
-            ->route('email-templates.index')
-            ->with('success', 'Email template updated successfully.');
+            return redirect()
+                ->route('email-templates.index')
+                ->with('success', 'Email template updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('email-templates.index')
+                ->with('error', 'Failed to update email template: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -125,16 +142,19 @@ class EmailTemplateController extends Controller
         $this->authorize('view', $emailTemplate);
 
         $sampleData = [
-            'first_name' => 'User',
-            'last_name' => 'Example',
-            'full_name' => 'User Example',
-            'email' => 'user.example@example.com',
-            'sex' => 'female',
-            'birth_date' => '2000-01-01',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'full_name' => 'John Doe',
+            'email' => 'john.doe@example.com',
+            'sex' => 'male',
+            'birth_date' => '1990-01-01',
         ];
 
-        $preview = $this->emailTemplateService->preview($emailTemplate, $sampleData);
-
-        return response()->json($preview);
+        try {
+            $preview = $this->emailTemplateService->preview($emailTemplate, $sampleData);
+            return response()->json($preview);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to generate preview'], 500);
+        }
     }
 }
