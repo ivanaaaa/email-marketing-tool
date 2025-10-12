@@ -57,7 +57,7 @@ class EmailTemplate extends Model
     private function replacePlaceholders(string $text, array $data): string
     {
         foreach ($data as $key => $value) {
-            $text = str_replace("{{{$key}}}", $value, $text);
+            $text = str_replace("{{".$key."}}", $value, $text);
         }
 
         return $text;

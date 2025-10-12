@@ -41,7 +41,10 @@ class CampaignEmailNotification extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject($this->subject)
-            ->line($this->body);
+            ->view('emails.campaign', [
+                'body' => $this->body
+            ]);
+//            ->line($this->body);
     }
 
     /**

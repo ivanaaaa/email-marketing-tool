@@ -6,6 +6,7 @@ use App\Jobs\ProcessCampaignJob;
 use App\Models\Campaign;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CampaignService
 {
@@ -26,11 +27,19 @@ class CampaignService
     public function create(User $user, array $data): Campaign
     {
         return DB::transaction(function () use ($user, $data) {
+            // Determine status based on scheduled_at
+            $status = 'draft';
+            $scheduledAt = $data['scheduled_at'] ?? null;
+
+            if (!empty($scheduledAt)) {
+                $status = 'scheduled';
+            }
+
             $campaign = $user->campaigns()->create([
                 'email_template_id' => $data['email_template_id'],
                 'name' => $data['name'],
-                'status' => 'draft',
-                'scheduled_at' => $data['scheduled_at'] ?? null,
+                'status' => $status,
+                'scheduled_at' => $scheduledAt,
             ]);
 
             if (isset($data['group_ids']) && !empty($data['group_ids'])) {
@@ -48,18 +57,30 @@ class CampaignService
     /**
      * Update an existing campaign.
      */
+    /**
+     * Update an existing campaign.
+     */
     public function update(Campaign $campaign, array $data): Campaign
     {
-        // Only allow updates if campaign is in draft status
-        if ($campaign->status !== 'draft') {
-            throw new \Exception('Cannot update campaign that is not in draft status.');
+        // Only allow updates if campaign is in draft or scheduled status
+        if (!in_array($campaign->status, ['draft', 'scheduled'])) {
+            throw new \Exception('Cannot update campaign that is not in draft or scheduled status.');
         }
 
         return DB::transaction(function () use ($campaign, $data) {
+            // Determine new status based on scheduled_at
+            $status = 'draft';
+            $scheduledAt = $data['scheduled_at'] ?? null;
+
+            if (!empty($scheduledAt)) {
+                $status = 'scheduled';
+            }
+
             $campaign->update([
                 'email_template_id' => $data['email_template_id'],
                 'name' => $data['name'],
-                'scheduled_at' => $data['scheduled_at'] ?? null,
+                'status' => $status,
+                'scheduled_at' => $scheduledAt,
             ]);
 
             if (isset($data['group_ids'])) {
@@ -112,7 +133,16 @@ class CampaignService
      */
     public function sendNow(Campaign $campaign): Campaign
     {
-        if ($campaign->status !== 'draft') {
+        Log::info('🔵 sendNow() METHOD CALLED', [
+            'campaign_id' => $campaign->id,
+            'current_status' => $campaign->status,
+        ]);
+
+        if (!in_array($campaign->status, ['draft', 'scheduled'])) {
+            Log::error('🔴 Status check failed', [
+                'campaign_id' => $campaign->id,
+                'status' => $campaign->status,
+            ]);
             throw new \Exception('Can only send campaigns in draft status.');
         }
 
@@ -121,8 +151,17 @@ class CampaignService
             'scheduled_at' => now(),
         ]);
 
-        // Dispatch job to process campaign
+        Log::info('🔵 About to dispatch job', [
+            'campaign_id' => $campaign->id,
+            'queue_driver' => config('queue.default'),
+        ]);
+        // Dispatch job to process campaign immediately
         ProcessCampaignJob::dispatch($campaign);
+
+        Log::info('Campaign dispatched for immediate sending', [
+            'campaign_id' => $campaign->id,
+            'campaign_name' => $campaign->name,
+        ]);
 
         return $campaign;
     }

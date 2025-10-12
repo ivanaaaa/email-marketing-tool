@@ -13,7 +13,7 @@ class CheckScheduledCampaignsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'app:check-scheduled-campaigns-command';
+    protected $signature = 'api:check-scheduled-campaigns-command';
 
     /**
      * The console command description.

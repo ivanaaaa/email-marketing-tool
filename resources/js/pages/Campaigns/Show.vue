@@ -63,11 +63,11 @@ const sendNow = () => {
                     </Badge>
                 </div>
                 <div class="flex gap-2">
-                    <Link v-if="campaign.status === 'draft'" :href="`/campaigns/${campaign.id}/edit`">
+                    <Link v-if="campaign.status === 'draft' || campaign.status === 'scheduled'" :href="`/campaigns/${campaign.id}/edit`">
                         <Button variant="outline">Edit</Button>
                     </Link>
                     <Button
-                        v-if="campaign.status === 'draft'"
+                        v-if="campaign.status === 'draft' || campaign.status === 'scheduled'"
                         @click="sendNow"
                     >
                         Send Now

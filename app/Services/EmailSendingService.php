@@ -11,52 +11,62 @@ use Illuminate\Support\Facades\Log;
 
 class EmailSendingService
 {
-    /**
-     * Process campaign and send emails to all recipients.
-     * @throws EmailSendingException
-     */
     public function processCampaign(Campaign $campaign): void
     {
-        // Update status to processing
-        $campaign->update(['status' => 'processing']);
+        Log::info('🔵 Processing campaign', [
+            'campaign_id' => $campaign->id,
+            'email_template_id' => $campaign->email_template_id,
+            'group_ids' => $campaign->group_ids
+        ]);
+        try {
+            $campaign->update(['status' => 'processing']);
+            $groupIds = $campaign->groups->pluck('id')->toArray();
 
-        $groupIds = $campaign->groups->pluck('id')->toArray();
+            if (empty($groupIds)) {
+                throw new EmailSendingException('Campaign has no target groups assigned');
+            }
 
-        if (empty($groupIds)) {
-            throw new EmailSendingException('Campaign has no target groups assigned');
+            $sentCount = 0;
+            $failedCount = 0;
+            $hasErrors = false;
+
+            Customer::whereHas('groups', function ($query) use ($groupIds) {
+                $query->whereIn('groups.id', $groupIds);
+            })
+                ->distinct()
+                ->chunk(100, function ($customers) use ($campaign, &$sentCount, &$failedCount, &$hasErrors) {
+                    foreach ($customers as $customer) {
+                        try {
+                            $this->sendEmailToCustomer($campaign, $customer);
+                            $sentCount++;
+                            sleep(1); // Throttle to 1 email/second for Mailtrap
+                        } catch (\Exception $e) {
+                            $failedCount++;
+                            $hasErrors = true;
+                            Log::error('Email sending failed', [
+                                'campaign_id' => $campaign->id,
+                                'customer_id' => $customer->id,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                        }
+
+                        if (($sentCount + $failedCount) % 10 === 0) {
+                            $this->updateCampaignProgress($campaign, $sentCount, $failedCount);
+                        }
+                    }
+                });
+
+            $this->completeCampaign($campaign, $sentCount, $failedCount, $hasErrors);
+        } catch (\Exception $e) {
+            $campaign->update(['status' => 'failed']);
+            Log::error('🔴 Campaign processing failed', [
+                'campaign_id' => $campaign->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-
-        $sentCount = 0;
-        $failedCount = 0;
-
-        // Process customers in chunks for memory efficiency
-        Customer::whereHas('groups', function ($query) use ($groupIds) {
-            $query->whereIn('groups.id', $groupIds);
-        })
-            ->distinct()
-            ->chunk(100, function ($customers) use ($campaign, &$sentCount, &$failedCount) {
-                foreach ($customers as $customer) {
-                    try {
-                        $this->sendEmailToCustomer($campaign, $customer);
-                        $sentCount++;
-                    } catch (\Exception $e) {
-                        $failedCount++;
-                        Log::error('Email sending failed', [
-                            'campaign_id' => $campaign->id,
-                            'customer_id' => $customer->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-
-                    // Update progress periodically
-                    if (($sentCount + $failedCount) % 10 === 0) {
-                        $this->updateCampaignProgress($campaign, $sentCount, $failedCount);
-                    }
-                }
-            });
-
-        // Final update
-        $this->completeCampaign($campaign, $sentCount, $failedCount);
     }
 
     /**
@@ -75,6 +85,13 @@ class EmailSendingService
 
         $subject = $template->replaceSubjectPlaceholders($placeholderData);
         $body = $template->replaceBodyPlaceholders($placeholderData);
+
+        Log::info('Sending email', [
+            'campaign_id' => $campaign->id,
+            'customer_id' => $customer->id,
+            'customer_email' => $customer->email,
+            'subject' => $subject
+        ]);
 
         if (empty($subject) || empty($body)) {
             throw new EmailSendingException("Email subject or body is empty for customer {$customer->id}");
@@ -99,22 +116,26 @@ class EmailSendingService
         DB::transaction(function () use ($campaign, $sentCount, $failedCount) {
             $campaign->update([
                 'sent_count' => $sentCount,
-                'failed_count' => $failedCount,
+                'failed_count' => $failedCount
             ]);
         });
     }
 
-    /**
-     * Mark campaign as completed.
-     */
-    private function completeCampaign(Campaign $campaign, int $sentCount, int $failedCount): void
+    private function completeCampaign(Campaign $campaign, int $sentCount, int $failedCount, bool $hasErrors): void
     {
-        DB::transaction(function () use ($campaign, $sentCount, $failedCount) {
+        DB::transaction(function () use ($campaign, $sentCount, $failedCount, $hasErrors) {
+            $status = $hasErrors && $sentCount === 0 ? 'failed' : 'completed';
             $campaign->update([
-                'status' => 'completed',
+                'status' => $status,
                 'sent_count' => $sentCount,
                 'failed_count' => $failedCount,
-                'sent_at' => now(),
+                'sent_at' => now()
+            ]);
+            Log::info('🔵 Campaign completed', [
+                'campaign_id' => $campaign->id,
+                'status' => $status,
+                'sent_count' => $sentCount,
+                'failed_count' => $failedCount
             ]);
         });
     }

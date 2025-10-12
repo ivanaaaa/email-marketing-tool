@@ -41,4 +41,16 @@ class StoreCampaignRequest extends FormRequest
             'scheduled_at' => 'scheduled date',
         ];
     }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'scheduled_at.after' => 'The scheduled date must be in the future.',
+            'group_ids.required' => 'Please select at least one group.',
+            'group_ids.min' => 'Please select at least one group.',
+        ];
+    }
 }

@@ -57,8 +57,8 @@ class EmailTemplateServiceTest extends TestCase
     {
         $template = EmailTemplate::factory()->create([
             'user_id' => $this->user->id,
-            'subject' => 'Hello {first_name}!',
-            'body' => 'Welcome {full_name}!',
+            'subject' => 'Hello {{first_name}}!',
+            'body' => 'Welcome {{full_name}}!',
         ]);
 
         $sampleData = [

@@ -37,25 +37,23 @@ class ProcessCampaignJob implements ShouldQueue
      */
     public function handle(EmailSendingService $emailSendingService): void
     {
-        Log::info('Processing campaign', ['campaign_id' => $this->campaign->id]);
-
+        Log::info('🔵 Processing ProcessCampaignJob', [
+            'campaign_id' => $this->campaign->id,
+            'email_template_id' => $this->campaign->email_template_id,
+            'group_ids' => $this->campaign->group_ids,
+            'queue_driver' => config('queue.default')
+        ]);
         try {
             $emailSendingService->processCampaign($this->campaign);
-
-            Log::info('Campaign processed successfully', [
-                'campaign_id' => $this->campaign->id,
-                'sent_count' => $this->campaign->sent_count,
-                'failed_count' => $this->campaign->failed_count,
-            ]);
+            Log::info('🔵 Campaign processed successfully', ['campaign_id' => $this->campaign->id]);
         } catch (\Exception $e) {
-            Log::error('Campaign processing failed', [
+            $this->campaign->update(['status' => 'failed']);
+            Log::error('🔴 Campaign processing failed', [
                 'campaign_id' => $this->campaign->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-
-            $this->campaign->update(['status' => 'failed']);
-
-            throw $e;
+            $this->fail($e);
         }
     }
 

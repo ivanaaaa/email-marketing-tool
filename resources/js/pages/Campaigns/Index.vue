@@ -94,11 +94,11 @@ const deleteCampaign = (id: number) => {
                                     <Link :href="`/campaigns/${campaign.id}`">
                                         <Button variant="outline" size="sm">View</Button>
                                     </Link>
-                                    <Link v-if="campaign.status === 'draft'" :href="`/campaigns/${campaign.id}/edit`">
+                                    <Link v-if="campaign.status === 'draft' || campaign.status === 'scheduled'" :href="`/campaigns/${campaign.id}/edit`">
                                         <Button variant="outline" size="sm">Edit</Button>
                                     </Link>
                                     <Button
-                                        v-if="campaign.status === 'draft'"
+                                        v-if="campaign.status === 'draft' || campaign.status === 'scheduled'"
                                         variant="destructive"
                                         size="sm"
                                         @click="deleteCampaign(campaign.id)"

@@ -39,7 +39,22 @@ const form = ref({
 });
 
 const submit = () => {
-    router.post('/campaigns', form.value);
+    const formData = {
+        ...form.value,
+        scheduled_at: form.value.scheduled_at
+            ? new Date(form.value.scheduled_at).toLocaleString('en-US', {
+                timeZone: 'Europe/Paris',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$1-$2 $4')
+            : ''
+    };
+    router.post('/campaigns', formData);
 };
 </script>
 
