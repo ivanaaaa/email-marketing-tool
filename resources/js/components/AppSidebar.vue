@@ -11,9 +11,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { customers } from '@/routes';
-import { groups } from '@/routes';
-import { campaigns } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Folder, LayoutGrid } from 'lucide-vue-next';
@@ -22,17 +19,22 @@ import AppLogo from './AppLogo.vue';
 const mainNavItems: NavItem[] = [
     {
         title: 'Customers',
-        href: customers(),
+        href: '/customers',
         icon: LayoutGrid,
     },
     {
         title: 'Groups',
-        href: groups(),
+        href: '/groups',
         icon: LayoutGrid,
     },
     {
         title: 'Campaigns',
-        href: campaigns(),
+        href: '/campaigns',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Email Templates',
+        href: '/email-templates',
         icon: LayoutGrid,
     },
 ];
@@ -52,7 +54,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="customers()">
+                        <Link>
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
