@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\GroupController;
 use Illuminate\Support\Facades\Auth;
@@ -25,10 +24,10 @@ Route::middleware(['auth'])->group(function () {
 
 
     // Customers
-    Route::resource('customers', CustomerController::class)->name('index', 'customers');
+    Route::resource('customers', CustomerController::class);
 
     // Groups
-    Route::resource('groups', GroupController::class)->name('index', 'groups');
+    Route::resource('groups', GroupController::class);
 
     // Email Templates
     Route::resource('email-templates', EmailTemplateController::class);
@@ -36,7 +35,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('email-templates.preview');
 
     // Campaigns
-    Route::resource('campaigns', CampaignController::class)->name('index', 'campaigns');
+    Route::resource('campaigns', CampaignController::class);
     Route::post('campaigns/{campaign}/schedule', [CampaignController::class, 'schedule'])
         ->name('campaigns.schedule');
     Route::post('campaigns/{campaign}/send-now', [CampaignController::class, 'sendNow'])
