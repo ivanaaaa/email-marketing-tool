@@ -20,6 +20,34 @@ A Laravel 12 + Vue.js application for managing customers, groups, email template
 - MySQL
 - Git
 
+## Demo
+- Customers
+
+
+https://github.com/user-attachments/assets/57bb5b40-5451-4784-a39e-4c5d7ceca5ce
+
+
+- Groups
+
+
+https://github.com/user-attachments/assets/b5c61ed0-c238-4fdc-8438-23686e2df711
+
+
+- Email Template
+
+
+https://github.com/user-attachments/assets/69811672-6f93-4557-baa9-f4ac26bc66ee
+
+
+
+- Campaigns
+
+
+https://github.com/user-attachments/assets/2b51f5d5-0225-47d0-8ad7-3ad00af80094
+
+
+
+
 ## 🛠️ Installation
 
 ### 1. Clone the Repository
