@@ -1,3 +1,4 @@
+<!-- resources/js/Pages/Campaigns/Index.vue -->
 <script setup lang="ts">
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -41,6 +42,14 @@ const getStatusColor = (status: string) => {
         failed: 'bg-red-500',
     };
     return colors[status] || 'bg-gray-500';
+};
+
+const canEdit = (campaign: Campaign) => {
+    return ['draft', 'scheduled'].includes(campaign.status);
+};
+
+const canDelete = (campaign: Campaign) => {
+    return campaign.status === 'draft';
 };
 
 const deleteCampaign = (id: number) => {
@@ -94,11 +103,11 @@ const deleteCampaign = (id: number) => {
                                     <Link :href="`/campaigns/${campaign.id}`">
                                         <Button variant="outline" size="sm">View</Button>
                                     </Link>
-                                    <Link v-if="campaign.status === 'draft' || campaign.status === 'scheduled'" :href="`/campaigns/${campaign.id}/edit`">
+                                    <Link v-if="canEdit(campaign)" :href="`/campaigns/${campaign.id}/edit`">
                                         <Button variant="outline" size="sm">Edit</Button>
                                     </Link>
                                     <Button
-                                        v-if="campaign.status === 'draft' || campaign.status === 'scheduled'"
+                                        v-if="canDelete(campaign)"
                                         variant="destructive"
                                         size="sm"
                                         @click="deleteCampaign(campaign.id)"

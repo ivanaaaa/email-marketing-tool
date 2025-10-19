@@ -1,3 +1,4 @@
+<!-- resources/js/Pages/Campaigns/Show.vue -->
 <script setup lang="ts">
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -27,9 +28,16 @@ interface Statistics {
     status: string;
 }
 
+interface Permissions {
+    canEdit: boolean;
+    canSend: boolean;
+    canDelete: boolean;
+}
+
 interface Props {
     campaign: Campaign;
     statistics: Statistics;
+    permissions: Permissions;
 }
 
 const props = defineProps<Props>();
@@ -63,13 +71,10 @@ const sendNow = () => {
                     </Badge>
                 </div>
                 <div class="flex gap-2">
-                    <Link v-if="campaign.status === 'draft' || campaign.status === 'scheduled'" :href="`/campaigns/${campaign.id}/edit`">
+                    <Link v-if="permissions.canEdit" :href="`/campaigns/${campaign.id}/edit`">
                         <Button variant="outline">Edit</Button>
                     </Link>
-                    <Button
-                        v-if="campaign.status === 'draft' || campaign.status === 'scheduled'"
-                        @click="sendNow"
-                    >
+                    <Button v-if="permissions.canSend" @click="sendNow">
                         Send Now
                     </Button>
                     <Link href="/campaigns">
