@@ -120,16 +120,4 @@ class CustomerService
             ->latest()
             ->paginate($perPage);
     }
-
-    /**
-     * Get customers by group IDs with chunking for large datasets.
-     */
-    public function getByGroupIds(array $groupIds, callable $callback): void
-    {
-        Customer::whereHas('groups', function ($query) use ($groupIds) {
-            $query->whereIn('groups.id', $groupIds);
-        })
-            ->distinct()
-            ->chunk(100, $callback);
-    }
 }

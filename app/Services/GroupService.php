@@ -70,28 +70,11 @@ class GroupService
     }
 
     /**
-     * Add customers to a group.
-     */
-    public function addCustomers(Group $group, array $customerIds): Group
-    {
-        $group->customers()->syncWithoutDetaching($customerIds);
-        return $group->loadCount('customers');
-    }
-
-    /**
-     * Remove customers from a group.
-     */
-    public function removeCustomers(Group $group, array $customerIds): Group
-    {
-        $group->customers()->detach($customerIds);
-        return $group->loadCount('customers');
-    }
-
-    /**
      * Get group with customers.
      */
-    public function getWithCustomers(Group $group, int $perPage = 50)
+    public function getWithCustomers(Group $group, int $perPage = null)
     {
+        $perPage = $perPage ?? config('campaign.pagination.groups_per_page', 50);
         return $group->customers()
             ->latest()
             ->paginate($perPage);
