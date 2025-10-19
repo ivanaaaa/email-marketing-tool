@@ -120,6 +120,14 @@ class CampaignService
             'scheduled_at' => $scheduledAt,
         ]);
 
+        // check status after update
+        if ($campaign->isScheduled()) {
+            Log::info('Campaign successfully scheduled', [
+                'campaign_id' => $campaign->id,
+                'scheduled_at' => $scheduledAt,
+            ]);
+        }
+
         return $campaign;
     }
 

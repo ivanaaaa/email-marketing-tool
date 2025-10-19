@@ -20,6 +20,22 @@ class EmailSendingService
             'group_ids' => $campaign->groups->pluck('id')->toArray(),
         ]);
         try {
+            // prevent reprocessing if campaign is already completed
+            if ($campaign->isCompleted()) {
+                Log::warning('Campaign already completed, skipping', [
+                    'campaign_id' => $campaign->id
+                ]);
+                return;
+            }
+
+            // prevent duplicate if campaign is already being processed
+            if ($campaign->isProcessing()) {
+                Log::warning('Campaign already being processed, skipping', [
+                    'campaign_id' => $campaign->id
+                ]);
+                return;
+            }
+
             $campaign->update(['status' => 'processing']);
             $groupIds = $campaign->groups->pluck('id')->toArray();
 

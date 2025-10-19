@@ -35,6 +35,11 @@ class CheckScheduledCampaignsCommand extends Command
         }
 
         foreach ($campaigns as $campaign) {
+            if (!$campaign->isReadyToProcess()) {
+                $this->warn("Campaign {$campaign->id} not ready despite scope query");
+                continue;
+            }
+
             $this->info("Dispatching campaign: {$campaign->name} (ID: {$campaign->id})");
             ProcessCampaignJob::dispatch($campaign);
         }
