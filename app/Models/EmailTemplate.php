@@ -68,13 +68,13 @@ class EmailTemplate extends Model
      */
     public static function getAvailablePlaceholders(): array
     {
-        return [
+        return config('campaign.placeholders', [
             '{{first_name}}' => 'Customer first name',
             '{{last_name}}' => 'Customer last name',
             '{{full_name}}' => 'Customer full name',
             '{{email}}' => 'Customer email',
             '{{sex}}' => 'Customer sex',
             '{{birth_date}}' => 'Customer birth date',
-        ];
+        ]);
     }
 }

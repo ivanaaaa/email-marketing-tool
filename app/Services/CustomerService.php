@@ -12,8 +12,9 @@ class CustomerService
     /**
      * Get all customers for a user with pagination.
      */
-    public function getAllForUser(User $user, int $perPage = 50)
+    public function getAllForUser(User $user, int $perPage = null)
     {
+        $perPage = $perPage ?? config('campaign.pagination.customers_per_page', 50);
         return $user->customers()
             ->with('groups')
             ->latest()
@@ -106,8 +107,9 @@ class CustomerService
     /**
      * Search customers by query.
      */
-    public function search(User $user, string $query, int $perPage = 50)
+    public function search(User $user, string $query, int $perPage = null)
     {
+        $perPage = $perPage ?? config('campaign.pagination.customers_per_page', 50);
         return $user->customers()
             ->with('groups')
             ->where(function ($q) use ($query) {

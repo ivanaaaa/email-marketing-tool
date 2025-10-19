@@ -18,19 +18,22 @@ class ProcessCampaignJob implements ShouldQueue
     /**
      * The number of times the job may be attempted.
      */
-    public int $tries = 3;
+    public int $tries;
 
     /**
      * The number of seconds the job can run before timing out.
      */
-    public int $timeout = 3600;
+    public int $timeout;
 
     /**
      * Create a new job instance.
      */
     public function __construct(
         public Campaign $campaign
-    ) {}
+    ) {
+        $this->tries = config('campaign.job.max_tries', 3);
+        $this->timeout = config('campaign.job.timeout', 3600);
+    }
 
     /**
      * Execute the job.
@@ -40,7 +43,7 @@ class ProcessCampaignJob implements ShouldQueue
         Log::info('🔵 Processing ProcessCampaignJob', [
             'campaign_id' => $this->campaign->id,
             'email_template_id' => $this->campaign->email_template_id,
-            'group_ids' => $this->campaign->group_ids,
+            'group_ids' => $this->campaign->groups->pluck('id')->toArray(),
             'queue_driver' => config('queue.default')
         ]);
         try {

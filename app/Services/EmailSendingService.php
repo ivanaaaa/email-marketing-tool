@@ -1,4 +1,5 @@
 <?php
+// app/Services/EmailSendingService.php
 
 namespace App\Services;
 
@@ -16,7 +17,7 @@ class EmailSendingService
         Log::info('🔵 Processing campaign', [
             'campaign_id' => $campaign->id,
             'email_template_id' => $campaign->email_template_id,
-            'group_ids' => $campaign->group_ids
+            'group_ids' => $campaign->groups->pluck('id')->toArray(),
         ]);
         try {
             $campaign->update(['status' => 'processing']);
@@ -30,16 +31,21 @@ class EmailSendingService
             $failedCount = 0;
             $hasErrors = false;
 
+            // USE CONFIG instead of magic number
+            $chunkSize = config('campaign.email.chunk_size', 100);
+            $progressInterval = config('campaign.email.progress_update_interval', 10);
+            $throttleSeconds = config('campaign.email.throttle_seconds', 1);
+
             Customer::whereHas('groups', function ($query) use ($groupIds) {
                 $query->whereIn('groups.id', $groupIds);
             })
                 ->distinct()
-                ->chunk(100, function ($customers) use ($campaign, &$sentCount, &$failedCount, &$hasErrors) {
+                ->chunk($chunkSize, function ($customers) use ($campaign, &$sentCount, &$failedCount, &$hasErrors, $progressInterval, $throttleSeconds) {
                     foreach ($customers as $customer) {
                         try {
                             $this->sendEmailToCustomer($campaign, $customer);
                             $sentCount++;
-                            sleep(1); // Throttle to 1 email/second for Mailtrap
+                            sleep($throttleSeconds);
                         } catch (\Exception $e) {
                             $failedCount++;
                             $hasErrors = true;
@@ -51,7 +57,7 @@ class EmailSendingService
                             ]);
                         }
 
-                        if (($sentCount + $failedCount) % 10 === 0) {
+                        if (($sentCount + $failedCount) % $progressInterval === 0) {
                             $this->updateCampaignProgress($campaign, $sentCount, $failedCount);
                         }
                     }
@@ -121,6 +127,9 @@ class EmailSendingService
         });
     }
 
+    /**
+     * Complete campaign processing.
+     */
     private function completeCampaign(Campaign $campaign, int $sentCount, int $failedCount, bool $hasErrors): void
     {
         DB::transaction(function () use ($campaign, $sentCount, $failedCount, $hasErrors) {
