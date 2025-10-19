@@ -57,13 +57,9 @@ class CampaignService
     /**
      * Update an existing campaign.
      */
-    /**
-     * Update an existing campaign.
-     */
     public function update(Campaign $campaign, array $data): Campaign
     {
-        // Only allow updates if campaign is in draft or scheduled status
-        if (!in_array($campaign->status, ['draft', 'scheduled'])) {
+        if (!$campaign->canBeEdited()) {
             throw new \Exception('Cannot update campaign that is not in draft or scheduled status.');
         }
 
@@ -100,8 +96,7 @@ class CampaignService
      */
     public function delete(Campaign $campaign): bool
     {
-        // Only allow deletion if campaign is in draft status
-        if ($campaign->status !== 'draft') {
+        if (!$campaign->canBeDeleted()) {
             throw new \Exception('Cannot delete campaign that is not in draft status.');
         }
 
@@ -116,7 +111,7 @@ class CampaignService
      */
     public function schedule(Campaign $campaign, \DateTime $scheduledAt): Campaign
     {
-        if ($campaign->status !== 'draft') {
+        if (!$campaign->isDraft()) {
             throw new \Exception('Can only schedule campaigns in draft status.');
         }
 
@@ -143,7 +138,7 @@ class CampaignService
                 'campaign_id' => $campaign->id,
                 'status' => $campaign->status,
             ]);
-            throw new \Exception('Can only send campaigns in draft status.');
+            throw new \Exception('Can only send campaigns in draft or scheduled status.');
         }
 
         $campaign->update([
@@ -187,7 +182,7 @@ class CampaignService
             'sent_count' => $campaign->sent_count,
             'failed_count' => $campaign->failed_count,
             'pending_count' => $campaign->total_recipients - $campaign->sent_count - $campaign->failed_count,
-            'progress_percentage' => $campaign->getProgressPercentage(),
+            'progress_percentage' => $campaign->getProgressPercentage(), // ✅ USE MODEL METHOD
             'status' => $campaign->status,
         ];
     }

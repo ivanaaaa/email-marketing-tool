@@ -42,12 +42,4 @@ class Group extends Model
         return $this->belongsToMany(Campaign::class, 'campaign_group')
             ->withTimestamps();
     }
-
-    /**
-     * Get the count of customers in this group.
-     */
-    public function getCustomersCountAttribute(): int
-    {
-        return $this->customers()->count();
-    }
 }

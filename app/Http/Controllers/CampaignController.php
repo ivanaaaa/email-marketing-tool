@@ -80,6 +80,11 @@ class CampaignController extends Controller
         return Inertia::render('Campaigns/Show', [
             'campaign' => $campaign->load(['emailTemplate', 'groups']),
             'statistics' => $statistics,
+            'permissions' => [
+                'canEdit' => $campaign->canBeEdited(),
+                'canSend' => $campaign->canBeSent(),
+                'canDelete' => $campaign->canBeDeleted(),
+            ],
         ]);
     }
 
@@ -89,6 +94,12 @@ class CampaignController extends Controller
     public function edit(Request $request, Campaign $campaign)
     {
         $this->authorize('update', $campaign);
+
+        if (!$campaign->canBeEdited()) {
+            return redirect()
+                ->route('campaigns.show', $campaign)
+                ->with('error', 'Cannot edit a campaign that is processing or completed.');
+        }
 
         $templates = $this->emailTemplateService->getAllForUser($request->user());
         $groups = $this->groupService->getAllForUser($request->user());

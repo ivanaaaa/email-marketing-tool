@@ -57,6 +57,14 @@ class Campaign extends Model
     }
 
     /**
+     * Check if campaign is in draft status.
+     */
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    /**
      * Check if campaign is scheduled for future.
      */
     public function isScheduled(): bool
@@ -65,12 +73,11 @@ class Campaign extends Model
     }
 
     /**
-     * Check if campaign is ready to be processed.
+     * Check if campaign is currently processing.
      */
-    public function isReadyToProcess(): bool
+    public function isProcessing(): bool
     {
-        return $this->status === 'scheduled'
-            && $this->scheduled_at?->isPast();
+        return $this->status === 'processing';
     }
 
     /**
@@ -79,6 +86,47 @@ class Campaign extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    /**
+     * Check if campaign has failed.
+     */
+    public function isFailed(): bool
+    {
+        return $this->status === 'failed';
+    }
+
+    /**
+     * Check if campaign is ready to be processed.
+     * (Scheduled and time has arrived)
+     */
+    public function isReadyToProcess(): bool
+    {
+        return $this->status === 'scheduled' && $this->scheduled_at?->isPast();
+    }
+
+    /**
+     * Check if campaign can be edited.
+     */
+    public function canBeEdited(): bool
+    {
+        return in_array($this->status, ['draft', 'scheduled']);
+    }
+
+    /**
+     * Check if campaign can be sent.
+     */
+    public function canBeSent(): bool
+    {
+        return in_array($this->status, ['draft', 'scheduled']);
+    }
+
+    /**
+     * Check if campaign can be deleted.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->status === 'draft';
     }
 
     /**
