@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CampaignStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,7 @@ class Campaign extends Model
         'total_recipients' => 'integer',
         'sent_count' => 'integer',
         'failed_count' => 'integer',
+        'status' => CampaignStatus::class,
     ];
 
     /**
@@ -61,7 +63,7 @@ class Campaign extends Model
      */
     public function isDraft(): bool
     {
-        return $this->status === 'draft';
+        return $this->status === CampaignStatus::DRAFT;
     }
 
     /**
@@ -69,7 +71,8 @@ class Campaign extends Model
      */
     public function isScheduled(): bool
     {
-        return $this->status === 'scheduled' && $this->scheduled_at?->isFuture();
+        return $this->status === CampaignStatus::SCHEDULED
+            && $this->scheduled_at?->isFuture();
     }
 
     /**
@@ -77,7 +80,7 @@ class Campaign extends Model
      */
     public function isProcessing(): bool
     {
-        return $this->status === 'processing';
+        return $this->status === CampaignStatus::PROCESSING;
     }
 
     /**
@@ -85,7 +88,7 @@ class Campaign extends Model
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === CampaignStatus::COMPLETED;
     }
 
     /**
@@ -93,7 +96,7 @@ class Campaign extends Model
      */
     public function isFailed(): bool
     {
-        return $this->status === 'failed';
+        return $this->status === CampaignStatus::FAILED;
     }
 
     /**
@@ -102,23 +105,26 @@ class Campaign extends Model
      */
     public function isReadyToProcess(): bool
     {
-        return $this->status === 'scheduled' && $this->scheduled_at?->isPast();
+        return $this->status === CampaignStatus::SCHEDULED
+            && $this->scheduled_at?->isPast();
     }
 
     /**
      * Check if campaign can be edited.
+     * ✅ NOW DELEGATES TO ENUM
      */
     public function canBeEdited(): bool
     {
-        return in_array($this->status, ['draft', 'scheduled']);
+        return $this->status->canBeEdited();
     }
 
     /**
      * Check if campaign can be sent.
+     * ✅ NOW DELEGATES TO ENUM
      */
     public function canBeSent(): bool
     {
-        return in_array($this->status, ['draft', 'scheduled']);
+        return $this->status->canBeSent();
     }
 
     /**
@@ -126,7 +132,7 @@ class Campaign extends Model
      */
     public function canBeDeleted(): bool
     {
-        return $this->status === 'draft';
+        return $this->status->canBeDeleted();
     }
 
     /**
@@ -146,7 +152,7 @@ class Campaign extends Model
      */
     public function scopeReadyToProcess($query)
     {
-        return $query->where('status', 'scheduled')
+        return $query->where('status', CampaignStatus::SCHEDULED->value)
             ->where('scheduled_at', '<=', now());
     }
 }
