@@ -1,7 +1,9 @@
 <?php
+// app/Services/CampaignService.php
 
 namespace App\Services;
 
+use App\Enums\CampaignStatus;
 use App\Jobs\ProcessCampaignJob;
 use App\Models\Campaign;
 use App\Models\User;
@@ -27,12 +29,11 @@ class CampaignService
     public function create(User $user, array $data): Campaign
     {
         return DB::transaction(function () use ($user, $data) {
-            // Determine status based on scheduled_at
-            $status = 'draft';
+            $status = CampaignStatus::DRAFT;
             $scheduledAt = $data['scheduled_at'] ?? null;
 
             if (!empty($scheduledAt)) {
-                $status = 'scheduled';
+                $status = CampaignStatus::SCHEDULED;
             }
 
             $campaign = $user->campaigns()->create([
@@ -64,12 +65,11 @@ class CampaignService
         }
 
         return DB::transaction(function () use ($campaign, $data) {
-            // Determine new status based on scheduled_at
-            $status = 'draft';
+            $status = CampaignStatus::DRAFT;
             $scheduledAt = $data['scheduled_at'] ?? null;
 
             if (!empty($scheduledAt)) {
-                $status = 'scheduled';
+                $status = CampaignStatus::SCHEDULED;
             }
 
             $campaign->update([
@@ -116,7 +116,7 @@ class CampaignService
         }
 
         $campaign->update([
-            'status' => 'scheduled',
+            'status' => CampaignStatus::SCHEDULED,
             'scheduled_at' => $scheduledAt,
         ]);
 
@@ -138,19 +138,19 @@ class CampaignService
     {
         Log::info('🔵 sendNow() METHOD CALLED', [
             'campaign_id' => $campaign->id,
-            'current_status' => $campaign->status,
+            'current_status' => $campaign->status->value,
         ]);
 
-        if (!in_array($campaign->status, ['draft', 'scheduled'])) {
+        if (!$campaign->canBeSent()) {
             Log::error('🔴 Status check failed', [
                 'campaign_id' => $campaign->id,
-                'status' => $campaign->status,
+                'status' => $campaign->status->value,
             ]);
             throw new \Exception('Can only send campaigns in draft or scheduled status.');
         }
 
         $campaign->update([
-            'status' => 'scheduled',
+            'status' => CampaignStatus::SCHEDULED,
             'scheduled_at' => now(),
         ]);
 
@@ -190,8 +190,8 @@ class CampaignService
             'sent_count' => $campaign->sent_count,
             'failed_count' => $campaign->failed_count,
             'pending_count' => $campaign->total_recipients - $campaign->sent_count - $campaign->failed_count,
-            'progress_percentage' => $campaign->getProgressPercentage(), // ✅ USE MODEL METHOD
-            'status' => $campaign->status,
+            'progress_percentage' => $campaign->getProgressPercentage(),
+            'status' => $campaign->status->value,
         ];
     }
 }

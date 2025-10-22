@@ -30,7 +30,6 @@ class Campaign extends Model
         'total_recipients' => 'integer',
         'sent_count' => 'integer',
         'failed_count' => 'integer',
-        'status' => CampaignStatus::class,
     ];
 
     /**
@@ -111,7 +110,6 @@ class Campaign extends Model
 
     /**
      * Check if campaign can be edited.
-     * ✅ NOW DELEGATES TO ENUM
      */
     public function canBeEdited(): bool
     {
@@ -120,7 +118,6 @@ class Campaign extends Model
 
     /**
      * Check if campaign can be sent.
-     * ✅ NOW DELEGATES TO ENUM
      */
     public function canBeSent(): bool
     {
