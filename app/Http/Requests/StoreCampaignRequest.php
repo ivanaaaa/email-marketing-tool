@@ -1,8 +1,11 @@
 <?php
+// app/Http/Requests/StoreCampaignRequest.php
 
 namespace App\Http\Requests;
 
+use App\Enums\CampaignStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCampaignRequest extends FormRequest
 {
@@ -27,18 +30,7 @@ class StoreCampaignRequest extends FormRequest
             'group_ids' => 'required|array|min:1',
             'group_ids.*' => 'exists:groups,id',
             'scheduled_at' => 'nullable|date|after:now',
-        ];
-    }
-
-    /**
-     * Get custom attribute names for validator errors.
-     */
-    public function attributes(): array
-    {
-        return [
-            'email_template_id' => 'email template',
-            'group_ids' => 'groups',
-            'scheduled_at' => 'scheduled date',
+            'status' => ['nullable', Rule::in(CampaignStatus::values())],
         ];
     }
 
@@ -48,9 +40,12 @@ class StoreCampaignRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'scheduled_at.after' => 'The scheduled date must be in the future.',
-            'group_ids.required' => 'Please select at least one group.',
-            'group_ids.min' => 'Please select at least one group.',
+            'name.required' => 'Campaign name is required.',
+            'email_template_id.required' => 'Please select an email template.',
+            'email_template_id.exists' => 'The selected email template does not exist.',
+            'group_ids.required' => 'Please select at least one target group.',
+            'group_ids.min' => 'Please select at least one target group.',
+            'scheduled_at.after' => 'Scheduled time must be in the future.',
         ];
     }
 }

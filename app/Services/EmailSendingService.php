@@ -3,6 +3,7 @@
 
 namespace App\Services;
 
+use App\Enums\CampaignStatus;
 use App\Exceptions\EmailSendingException;
 use App\Models\Campaign;
 use App\Models\Customer;
@@ -36,7 +37,8 @@ class EmailSendingService
                 return;
             }
 
-            $campaign->update(['status' => 'processing']);
+            $campaign->update(['status' => CampaignStatus::PROCESSING]);
+
             $groupIds = $campaign->groups->pluck('id')->toArray();
 
             if (empty($groupIds)) {
@@ -81,7 +83,8 @@ class EmailSendingService
 
             $this->completeCampaign($campaign, $sentCount, $failedCount, $hasErrors);
         } catch (\Exception $e) {
-            $campaign->update(['status' => 'failed']);
+            $campaign->update(['status' => CampaignStatus::FAILED]);
+
             Log::error('🔴 Campaign processing failed', [
                 'campaign_id' => $campaign->id,
                 'error' => $e->getMessage(),
@@ -149,7 +152,10 @@ class EmailSendingService
     private function completeCampaign(Campaign $campaign, int $sentCount, int $failedCount, bool $hasErrors): void
     {
         DB::transaction(function () use ($campaign, $sentCount, $failedCount, $hasErrors) {
-            $status = $hasErrors && $sentCount === 0 ? 'failed' : 'completed';
+            $status = $hasErrors && $sentCount === 0
+                ? CampaignStatus::FAILED
+                : CampaignStatus::COMPLETED;
+
             $campaign->update([
                 'status' => $status,
                 'sent_count' => $sentCount,
@@ -158,7 +164,7 @@ class EmailSendingService
             ]);
             Log::info('🔵 Campaign completed', [
                 'campaign_id' => $campaign->id,
-                'status' => $status,
+                'status' => $status->value,
                 'sent_count' => $sentCount,
                 'failed_count' => $failedCount
             ]);

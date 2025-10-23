@@ -13,6 +13,12 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
+interface StatusOption {
+    value: string;
+    label: string;
+    color: string;
+}
+
 interface Campaign {
     id: number;
     name: string;
@@ -29,21 +35,22 @@ interface Campaign {
 
 interface Props {
     campaigns: Campaign[];
+    statusOptions: StatusOption[];
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-        draft: 'bg-gray-500',
-        scheduled: 'bg-blue-500',
-        processing: 'bg-yellow-500',
-        completed: 'bg-green-500',
-        failed: 'bg-red-500',
-    };
-    return colors[status] || 'bg-gray-500';
+const getStatusColor = (status: string): string => {
+    const option = props.statusOptions.find(opt => opt.value === status);
+    return option?.color || 'bg-gray-500';
 };
 
+const getStatusLabel = (status: string): string => {
+    const option = props.statusOptions.find(opt => opt.value === status);
+    return option?.label || status;
+};
+
+// Helper functions that match backend enum logic
 const canEdit = (campaign: Campaign) => {
     return ['draft', 'scheduled'].includes(campaign.status);
 };
@@ -87,7 +94,7 @@ const deleteCampaign = (id: number) => {
                             <TableCell>{{ campaign.email_template.name }}</TableCell>
                             <TableCell>
                                 <Badge :class="getStatusColor(campaign.status)">
-                                    {{ campaign.status }}
+                                    {{ getStatusLabel(campaign.status) }}
                                 </Badge>
                             </TableCell>
                             <TableCell>{{ campaign.total_recipients }}</TableCell>

@@ -1,7 +1,9 @@
 <?php
+// app/Http/Controllers/CampaignController.php
 
 namespace App\Http\Controllers;
 
+use App\Enums\CampaignStatus;
 use App\Http\Requests\StoreCampaignRequest;
 use App\Http\Requests\UpdateCampaignRequest;
 use App\Models\Campaign;
@@ -36,6 +38,7 @@ class CampaignController extends Controller
 
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns,
+            'statusOptions' => CampaignStatus::options(),
         ]);
     }
 
@@ -84,6 +87,12 @@ class CampaignController extends Controller
                 'canEdit' => $campaign->canBeEdited(),
                 'canSend' => $campaign->canBeSent(),
                 'canDelete' => $campaign->canBeDeleted(),
+            ],
+            'statusInfo' => [
+                'value' => $campaign->status->value,
+                'label' => $campaign->status->label(),
+                'color' => $campaign->status->color(),
+                'isFinal' => $campaign->status->isFinal(),
             ],
         ]);
     }

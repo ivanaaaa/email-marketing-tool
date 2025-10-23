@@ -3,6 +3,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\CampaignStatus;
 use App\Models\Campaign;
 use Illuminate\Console\Command;
 
@@ -21,6 +22,13 @@ class CampaignStatusCommand extends Command
             $this->info('No campaigns found.');
             return self::SUCCESS;
         }
+
+        $this->line('');
+        $this->info('Available Status Options:');
+        foreach (CampaignStatus::options() as $option) {
+            $this->line("  • {$option['label']} ({$option['value']})");
+        }
+        $this->line('');
 
         $this->table(
             ['ID', 'Name', 'Status', 'Template', 'Progress', 'Checks'],
@@ -41,7 +49,7 @@ class CampaignStatusCommand extends Command
                 return [
                     $campaign->id,
                     $campaign->name,
-                    $campaign->status,
+                    $campaign->status->label(), // Use enum label
                     $campaign->emailTemplate?->name ?? 'N/A',
                     $campaign->getProgressPercentage() . '%',
                     implode(', ', $checks),

@@ -12,6 +12,11 @@ class Campaign extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'email_template_id',
@@ -24,13 +29,36 @@ class Campaign extends Model
         'failed_count',
     ];
 
-    protected $casts = [
-        'scheduled_at' => 'datetime',
-        'sent_at' => 'datetime',
-        'total_recipients' => 'integer',
-        'sent_count' => 'integer',
-        'failed_count' => 'integer',
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'status' => CampaignStatus::class,
+            'scheduled_at' => 'datetime',
+            'sent_at' => 'datetime',
+            'total_recipients' => 'integer',
+            'sent_count' => 'integer',
+            'failed_count' => 'integer',
+        ];
+    }
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['progress_percentage'];
 
     /**
      * Get the user that owns the campaign.
@@ -70,8 +98,7 @@ class Campaign extends Model
      */
     public function isScheduled(): bool
     {
-        return $this->status === CampaignStatus::SCHEDULED
-            && $this->scheduled_at?->isFuture();
+        return $this->status === CampaignStatus::SCHEDULED;
     }
 
     /**
@@ -96,16 +123,6 @@ class Campaign extends Model
     public function isFailed(): bool
     {
         return $this->status === CampaignStatus::FAILED;
-    }
-
-    /**
-     * Check if campaign is ready to be processed.
-     * (Scheduled and time has arrived)
-     */
-    public function isReadyToProcess(): bool
-    {
-        return $this->status === CampaignStatus::SCHEDULED
-            && $this->scheduled_at?->isPast();
     }
 
     /**
@@ -135,7 +152,7 @@ class Campaign extends Model
     /**
      * Get campaign progress percentage.
      */
-    public function getProgressPercentage(): int
+    public function getProgressPercentageAttribute(): int
     {
         if ($this->total_recipients === 0) {
             return 0;

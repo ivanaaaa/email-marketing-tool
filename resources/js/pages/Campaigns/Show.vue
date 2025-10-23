@@ -34,24 +34,21 @@ interface Permissions {
     canDelete: boolean;
 }
 
+interface StatusInfo {
+    value: string;
+    label: string;
+    color: string;
+    isFinal: boolean;
+}
+
 interface Props {
     campaign: Campaign;
     statistics: Statistics;
     permissions: Permissions;
+    statusInfo: StatusInfo;
 }
 
 const props = defineProps<Props>();
-
-const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-        draft: 'bg-gray-500',
-        scheduled: 'bg-blue-500',
-        processing: 'bg-yellow-500',
-        completed: 'bg-green-500',
-        failed: 'bg-red-500',
-    };
-    return colors[status] || 'bg-gray-500';
-};
 
 const sendNow = () => {
     if (confirm('Are you sure you want to send this campaign now?')) {
@@ -66,8 +63,8 @@ const sendNow = () => {
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h1 class="text-3xl font-bold">{{ campaign.name }}</h1>
-                    <Badge :class="getStatusColor(campaign.status)" class="mt-2">
-                        {{ campaign.status }}
+                    <Badge :class="statusInfo.color" class="mt-2">
+                        {{ statusInfo.label }}
                     </Badge>
                 </div>
                 <div class="flex gap-2">
@@ -81,6 +78,12 @@ const sendNow = () => {
                         <Button variant="outline">Back to Campaigns</Button>
                     </Link>
                 </div>
+            </div>
+
+            <div v-if="statusInfo.isFinal" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                <p class="text-sm text-blue-700">
+                    This campaign is in a final state and cannot be edited.
+                </p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

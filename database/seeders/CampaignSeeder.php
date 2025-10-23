@@ -3,6 +3,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CampaignStatus;
 use App\Models\Campaign;
 use App\Models\Customer;
 use App\Models\EmailTemplate;
@@ -42,11 +43,10 @@ class CampaignSeeder extends Seeder
             'user_id' => $user->id,
             'email_template_id' => $template->id,
             'name' => 'Draft Campaign',
-            'status' => 'draft',
+            'status' => CampaignStatus::DRAFT,
         ]);
         $draftCampaign->groups()->attach($group);
 
-        // ✅ USE isDraft() to verify
         if ($draftCampaign->isDraft()) {
             $this->command->info("✓ Draft campaign created: {$draftCampaign->name}");
         }
@@ -55,12 +55,11 @@ class CampaignSeeder extends Seeder
             'user_id' => $user->id,
             'email_template_id' => $template->id,
             'name' => 'Scheduled Campaign',
-            'status' => 'scheduled',
+            'status' => CampaignStatus::SCHEDULED,
             'scheduled_at' => now()->addHour(),
         ]);
         $scheduledCampaign->groups()->attach($group);
 
-        // ✅ USE isScheduled() to verify
         if ($scheduledCampaign->isScheduled()) {
             $this->command->info("✓ Scheduled campaign created: {$scheduledCampaign->name}");
         }
@@ -69,12 +68,11 @@ class CampaignSeeder extends Seeder
             'user_id' => $user->id,
             'email_template_id' => $template->id,
             'name' => 'Ready Campaign',
-            'status' => 'scheduled',
+            'status' => CampaignStatus::SCHEDULED,
             'scheduled_at' => now()->subMinute(),
         ]);
         $readyCampaign->groups()->attach($group);
 
-        // ✅ USE isReadyToProcess() to verify
         if ($readyCampaign->isReadyToProcess()) {
             $this->command->info("✓ Ready campaign created: {$readyCampaign->name}");
         }
@@ -83,19 +81,17 @@ class CampaignSeeder extends Seeder
             'user_id' => $user->id,
             'email_template_id' => $template->id,
             'name' => 'Completed Campaign',
-            'status' => 'completed',
+            'status' => CampaignStatus::COMPLETED,
             'sent_at' => now(),
             'total_recipients' => 10,
             'sent_count' => 10,
         ]);
         $completedCampaign->groups()->attach($group);
 
-        // ✅ USE isCompleted() to verify
         if ($completedCampaign->isCompleted()) {
             $this->command->info("✓ Completed campaign created: {$completedCampaign->name}");
         }
 
-        // ✅ USE emailTemplate relationship
         $this->command->info("All campaigns use template: {$template->name}");
     }
 }
