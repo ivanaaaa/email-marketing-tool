@@ -32,13 +32,15 @@ class CustomerController extends Controller
     {
         $user = $request->user();
 
-        $customers = $request->has('search')
-            ? $this->customerService->search($user, $request->get('search'))
+        $search = $request->get('search', '');
+
+        $customers = filled($search)
+            ? $this->customerService->search($user, $search)
             : $this->customerService->getAllForUser($user);
 
         return Inertia::render('Customers/Index', [
             'customers' => $customers,
-            'search' => $request->get('search', ''),
+            'search' => $search,
         ]);
     }
 
