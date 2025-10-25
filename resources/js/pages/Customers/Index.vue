@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, UserPlus } from 'lucide-vue-next';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 interface Customer {
     id: number;
@@ -62,9 +63,19 @@ const clearSearch = () => {
     router.get('/customers', {}, { preserveState: true });
 };
 
-const deleteCustomer = (id: number) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-        router.delete(`/customers/${id}`);
+const showDialog = ref(false);
+const selectedCustomerId = ref<number | null>(null);
+
+const openDeleteDialog = (id: number) => {
+    selectedCustomerId.value = id;
+    showDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (selectedCustomerId.value) {
+        router.delete(`/customers/${selectedCustomerId.value}`);
+        selectedCustomerId.value = null;
+        showDialog.value = false;
     }
 };
 </script>
@@ -162,7 +173,7 @@ const deleteCustomer = (id: number) => {
                                     <Button
                                         variant="destructive"
                                         size="sm"
-                                        @click="deleteCustomer(customer.id)"
+                                        @click="openDeleteDialog(customer.id)"
                                     >
                                         Delete
                                     </Button>
@@ -198,5 +209,17 @@ const deleteCustomer = (id: number) => {
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            :open="showDialog"
+            title="Delete Customer"
+            description="Are you sure you want to delete this customer? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDelete"
+            @cancel="showDialog = false"
+            @update:open="showDialog = $event"
+        />
     </AppLayout>
 </template>
