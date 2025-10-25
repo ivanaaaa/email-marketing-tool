@@ -43,12 +43,15 @@ interface Props {
         to: number;
         links: PaginationLink[];
     };
-    search: string;
+    search?: string;
 }
 
 const props = defineProps<Props>();
 
-const searchQuery = ref(props.search);
+const searchQuery = ref(props.search || '');
+const showDialog = ref(false);
+const selectedCustomerId = ref<number | null>(null);
+const isDeleting = ref(false);
 
 const handleSearch = () => {
     router.get(
@@ -63,19 +66,42 @@ const clearSearch = () => {
     router.get('/customers', {}, { preserveState: true });
 };
 
-const showDialog = ref(false);
-const selectedCustomerId = ref<number | null>(null);
-
 const openDeleteDialog = (id: number) => {
     selectedCustomerId.value = id;
     showDialog.value = true;
 };
 
 const confirmDelete = () => {
-    if (selectedCustomerId.value) {
-        router.delete(`/customers/${selectedCustomerId.value}`);
-        selectedCustomerId.value = null;
-        showDialog.value = false;
+    if (selectedCustomerId.value && !isDeleting.value) {
+        isDeleting.value = true; // ✅ Set loading state
+
+        router.delete(`/customers/${selectedCustomerId.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // ✅ Close dialog after successful deletion
+                showDialog.value = false;
+                selectedCustomerId.value = null;
+                isDeleting.value = false;
+            },
+            onError: (errors) => {
+                // ✅ Keep dialog open on error, show error
+                console.error('Failed to delete customer:', errors);
+                isDeleting.value = false;
+                // Optionally show error message to user
+            },
+            onFinish: () => {
+                isDeleting.value = false;
+            }
+        });
+    }
+};
+
+const handleDialogUpdate = (open: boolean) => {
+    if (!isDeleting.value) {
+        showDialog.value = open;
+        if (!open) {
+            selectedCustomerId.value = null;
+        }
     }
 };
 </script>
@@ -98,18 +124,22 @@ const confirmDelete = () => {
                     <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
                         v-model="searchQuery"
-                        placeholder="Search customers..."
+                        placeholder="Search by name or email..."
                         class="pl-10"
                         @keyup.enter="handleSearch"
                     />
                 </div>
                 <Button @click="handleSearch">Search</Button>
-                <Button v-if="props.search" variant="outline" @click="clearSearch">
+                <Button
+                    v-if="props.search"
+                    variant="outline"
+                    @click="clearSearch"
+                >
                     Clear
                 </Button>
             </div>
 
-            <div class="bg-white rounded-lg shadow">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -146,13 +176,19 @@ const confirmDelete = () => {
                                 </div>
                             </TableCell>
                         </TableRow>
+
+                        <!-- Customer Rows -->
                         <TableRow v-for="customer in customers.data" :key="customer.id">
-                            <TableCell>
+                            <TableCell class="font-medium">
                                 {{ customer.first_name }} {{ customer.last_name }}
                             </TableCell>
                             <TableCell>{{ customer.email }}</TableCell>
-                            <TableCell>{{ customer.sex || '-' }}</TableCell>
-                            <TableCell>{{ customer.birth_date || '-' }}</TableCell>
+                            <TableCell>
+                                <span class="capitalize">{{ customer.sex || '-' }}</span>
+                            </TableCell>
+                            <TableCell>
+                                {{ customer.birth_date ? new Date(customer.birth_date).toLocaleDateString() : '-' }}
+                            </TableCell>
                             <TableCell>
                                 <div class="flex gap-1 flex-wrap">
                                     <Badge
@@ -162,7 +198,9 @@ const confirmDelete = () => {
                                     >
                                         {{ group.name }}
                                     </Badge>
-                                    <span v-if="customer.groups.length === 0" class="text-gray-400">-</span>
+                                    <span v-if="customer.groups.length === 0" class="text-gray-400 text-sm">
+                                        No groups
+                                    </span>
                                 </div>
                             </TableCell>
                             <TableCell class="text-right">
@@ -174,6 +212,7 @@ const confirmDelete = () => {
                                         variant="destructive"
                                         size="sm"
                                         @click="openDeleteDialog(customer.id)"
+                                        :disabled="isDeleting && selectedCustomerId === customer.id"
                                     >
                                         Delete
                                     </Button>
@@ -185,25 +224,30 @@ const confirmDelete = () => {
             </div>
 
             <!-- Pagination -->
-            <div class="mt-4 flex justify-between items-center" v-if="customers.data.length > 0">
+            <div
+                class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4"
+                v-if="customers.data.length > 0"
+            >
                 <div class="text-sm text-gray-600">
                     Showing {{ customers.from || 0 }} to {{ customers.to || 0 }} of
-                    {{ customers.total }} customers
+                    {{ customers.total }} customer{{ customers.total !== 1 ? 's' : '' }}
                     <span v-if="props.search" class="font-medium">
                         for "{{ props.search }}"
                     </span>
                 </div>
-                <div class="flex gap-1" v-if="customers.last_page > 1">
+                <div class="flex gap-1 flex-wrap justify-center" v-if="customers.last_page > 1">
                     <Link
-                        v-for="link in customers.links"
-                        :key="link.label"
+                        v-for="(link, index) in customers.links"
+                        :key="index"
                         :href="link.url || '#'"
                         :class="[
-                            'px-3 py-1 rounded border text-sm',
-                            link.active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
-                            !link.url ? 'opacity-50 cursor-not-allowed' : ''
+                            'px-3 py-1 rounded border text-sm transition-colors',
+                            link.active
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                            !link.url ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
                         ]"
-                        :preserve-state="true"
+                        preserve-scroll
                         v-html="link.label"
                     />
                 </div>
@@ -212,14 +256,14 @@ const confirmDelete = () => {
 
         <ConfirmDialog
             :open="showDialog"
+            :loading="isDeleting"
             title="Delete Customer"
-            description="Are you sure you want to delete this customer? This action cannot be undone."
-            confirmText="Delete"
+            description="Are you sure you want to delete this customer? This action cannot be undone and will remove them from all groups."
+            confirmText="Delete Customer"
             cancelText="Cancel"
             variant="destructive"
             @confirm="confirmDelete"
-            @cancel="showDialog = false"
-            @update:open="showDialog = $event"
+            @update:open="handleDialogUpdate"
         />
     </AppLayout>
 </template>

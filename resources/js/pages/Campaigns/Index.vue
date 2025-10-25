@@ -1,5 +1,6 @@
 <!-- resources/js/Pages/Campaigns/Index.vue -->
 <script setup lang="ts">
+import { ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 interface StatusOption {
     value: string;
@@ -40,6 +42,10 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const showDialog = ref(false);
+const selectedCampaignId = ref<number | null>(null);
+const isDeleting = ref(false);
+
 const getStatusColor = (status: string): string => {
     const option = props.statusOptions.find(opt => opt.value === status);
     return option?.color || 'bg-gray-500';
@@ -59,9 +65,39 @@ const canDelete = (campaign: Campaign) => {
     return campaign.status === 'draft';
 };
 
-const deleteCampaign = (id: number) => {
-    if (confirm('Are you sure you want to delete this campaign?')) {
-        router.delete(`/campaigns/${id}`);
+const openDeleteDialog = (id: number) => {
+    selectedCampaignId.value = id;
+    showDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (selectedCampaignId.value && !isDeleting.value) {
+        isDeleting.value = true;
+
+        router.delete(`/campaigns/${selectedCampaignId.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showDialog.value = false;
+                selectedCampaignId.value = null;
+                isDeleting.value = false;
+            },
+            onError: (errors) => {
+                console.error('Failed to delete campaign:', errors);
+                isDeleting.value = false;
+            },
+            onFinish: () => {
+                isDeleting.value = false;
+            }
+        });
+    }
+};
+
+const handleDialogUpdate = (open: boolean) => {
+    if (!isDeleting.value) {
+        showDialog.value = open;
+        if (!open) {
+            selectedCampaignId.value = null;
+        }
     }
 };
 </script>
@@ -117,7 +153,8 @@ const deleteCampaign = (id: number) => {
                                         v-if="canDelete(campaign)"
                                         variant="destructive"
                                         size="sm"
-                                        @click="deleteCampaign(campaign.id)"
+                                        @click="openDeleteDialog(campaign.id)"
+                                        :disabled="isDeleting && selectedCampaignId === campaign.id"
                                     >
                                         Delete
                                     </Button>
@@ -128,5 +165,17 @@ const deleteCampaign = (id: number) => {
                 </Table>
             </div>
         </div>
+
+        <ConfirmDialog
+            :open="showDialog"
+            :loading="isDeleting"
+            title="Delete Campaign"
+            description="Are you sure you want to delete this campaign? This action cannot be undone."
+            confirmText="Delete Campaign"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDelete"
+            @update:open="handleDialogUpdate"
+        />
     </AppLayout>
 </template>

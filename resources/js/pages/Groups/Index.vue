@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 interface Group {
     id: number;
@@ -25,9 +27,43 @@ interface Props {
 
 defineProps<Props>();
 
-const deleteGroup = (id: number) => {
-    if (confirm('Are you sure you want to delete this group?')) {
-        router.delete(`/groups/${id}`);
+const showDialog = ref(false);
+const selectedGroupId = ref<number | null>(null);
+const isDeleting = ref(false);
+
+const openDeleteDialog = (id: number) => {
+    selectedGroupId.value = id;
+    showDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (selectedGroupId.value && !isDeleting.value) {
+        isDeleting.value = true;
+
+        router.delete(`/groups/${selectedGroupId.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showDialog.value = false;
+                selectedGroupId.value = null;
+                isDeleting.value = false;
+            },
+            onError: (errors) => {
+                console.error('Failed to delete group:', errors);
+                isDeleting.value = false;
+            },
+            onFinish: () => {
+                isDeleting.value = false;
+            }
+        });
+    }
+};
+
+const handleDialogUpdate = (open: boolean) => {
+    if (!isDeleting.value) {
+        showDialog.value = open;
+        if (!open) {
+            selectedGroupId.value = null;
+        }
     }
 };
 </script>
@@ -72,7 +108,8 @@ const deleteGroup = (id: number) => {
                                     <Button
                                         variant="destructive"
                                         size="sm"
-                                        @click="deleteGroup(group.id)"
+                                        @click="openDeleteDialog(group.id)"
+                                        :disabled="isDeleting && selectedGroupId === group.id"
                                     >
                                         Delete
                                     </Button>
@@ -83,5 +120,18 @@ const deleteGroup = (id: number) => {
                 </Table>
             </div>
         </div>
+
+        <!-- Confirm Delete Dialog -->
+        <ConfirmDialog
+            :open="showDialog"
+            :loading="isDeleting"
+            title="Delete Group"
+            description="Are you sure you want to delete this group? This will remove the group but will not delete the customers in it."
+            confirmText="Delete Group"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDelete"
+            @update:open="handleDialogUpdate"
+        />
     </AppLayout>
 </template>
