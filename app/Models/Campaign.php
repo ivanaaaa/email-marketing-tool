@@ -118,14 +118,6 @@ class Campaign extends Model
     }
 
     /**
-     * Check if campaign has failed.
-     */
-    public function isFailed(): bool
-    {
-        return $this->status === CampaignStatus::FAILED;
-    }
-
-    /**
      * Check if campaign can be edited.
      */
     public function canBeEdited(): bool
